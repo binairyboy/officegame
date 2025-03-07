@@ -7,6 +7,27 @@ document.body.appendChild(app.view);
 const background = PIXI.Sprite.from('assets/office.png');
 app.stage.addChild(background);
 
+//Initialize a sounds
+var sound1 = new Howl({
+    src: ['assets/soundGameOver.mp3']
+});
+
+var sound2 = new Howl({
+    src: ['assets/soundOuch.mp3']
+});
+
+var sound3 = new Howl({
+    src: ['assets/soundShoot.mp3']
+});
+
+var sound4 = new Howl({
+    src: ['assets/soundHitPaper.mp3']
+});
+
+var sound5 = new Howl({
+    src: ['assets/soundPaperFloor.mp3']
+});
+
 //Variable bullets
 var bullets = 0;
 
@@ -25,7 +46,7 @@ const bulletsstyle = new PIXI.TextStyle({
 });
 
 //Text bullets
-const bulletstext = new PIXI.Text('0', bulletsstyle);
+const bulletstext = new PIXI.Text('0 bullets', bulletsstyle);
 bulletstext.x = 5;
 app.stage.addChild(bulletstext);
 
@@ -35,7 +56,7 @@ let life = 3;
 //Style life
 const lifestyle = new PIXI.TextStyle({
     fontFamily: 'Arial',
-    fontSize: 48,
+    fontSize: 38,
     fill: 'red',
     stroke: '#ffffff',
     strokeThickness: 4,
@@ -59,7 +80,7 @@ var score = 0;
 //Style score
 const scorestyle = new PIXI.TextStyle({
     fontFamily: 'Arial',
-    fontSize: 48,
+    fontSize: 38,
     fill: 'deepskyblue',
     stroke: '#ffffff',
     strokeThickness: 4,
@@ -70,8 +91,28 @@ const scorestyle = new PIXI.TextStyle({
     dropShadowColor: '#000000'
 });
 
+//Style for efficiency text
+const efficiencyStyle = new PIXI.TextStyle({
+    fontFamily: 'Arial',
+    fontSize: 36,
+    fill: 'orange',
+    stroke: '#ffffff',
+    strokeThickness: 4,
+    dropShadow: true,
+    dropShadowDistance: 10,
+    dropShadowAngle: Math.PI / 2,
+    dropShadowBlur: 4,
+    dropShadowColor: '#000000'
+});
+
+//Text object for efficiency
+const efficiencyText = new PIXI.Text('', efficiencyStyle);
+efficiencyText.x = 290;
+efficiencyText.y = 480;
+app.stage.addChild(efficiencyText);
+
 //Text score
-const scoretext = new PIXI.Text('0', scorestyle);
+const scoretext = new PIXI.Text('0 score', scorestyle);
 scoretext.x = 5;
 scoretext.y = 535;
 app.stage.addChild(scoretext);
@@ -114,11 +155,12 @@ function spaceKeyPressed() {
     bullets += 1;
     bulletstext.text = bullets;
     app.stage.addChild(bullet);
-
+    sound3.play();
     waitForCollision(bullet, filesList).then(function([bullet, files]) {
         app.stage.removeChild(bullet, files);
         score += 1;
         scoretext.text = score;
+        sound4.play();
     });
 }
 
@@ -136,9 +178,16 @@ gameInterval(function() {
         app.stage.removeChild(files);
         life -= 1;
         lifetext.text = life;
+        sound2.play();
         if (life <= 0) {
             app.stage.addChild(gameover);
             stopGame();
+            //Play the sound
+            sound1.play();
+            //Calculate efficiency
+            let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
+            efficiencyText.text = `Efficiency: ${efficiency}`;
+            app.stage.addChild(efficiencyText);
         }
     });
 
@@ -146,9 +195,16 @@ gameInterval(function() {
         app.stage.removeChild(files);
         life -= 1;
         lifetext.text = life;
+        sound5.play();
         if (life <= 0) {
             app.stage.addChild(gameover);
             stopGame();
+            //Play the sound
+            sound1.play();
+            //Calculate efficiency
+            let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
+            efficiencyText.text = `Efficiency: ${efficiency}`;
+            app.stage.addChild(efficiencyText);
         }
     });
     
