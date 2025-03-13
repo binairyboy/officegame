@@ -1,4 +1,7 @@
-const app = new PIXI.Application();
+const app = new PIXI.Application({
+    resolution: window.devicePixelRatio || 1,
+    autoDensity: true,
+});
 
 const filesList = [];
 
@@ -7,7 +10,7 @@ document.body.appendChild(app.view);
 const background = PIXI.Sprite.from('assets/office.png');
 app.stage.addChild(background);
 
-//Initialize a sounds
+//Initialize sounds
 var sound1 = new Howl({
     src: ['assets/soundGameOver.mp3']
 });
@@ -34,8 +37,8 @@ var bullets = 0;
 //Style bullets
 const bulletsstyle = new PIXI.TextStyle({
     fontFamily: 'Arial',
-    fontSize: 24,
-    fill: 'black',
+    fontSize: 38,
+    fill: 'lightgreen',
     stroke: '#ffffff',
     strokeThickness: 4,
     dropShadow: true,
@@ -46,8 +49,9 @@ const bulletsstyle = new PIXI.TextStyle({
 });
 
 //Text bullets
-const bulletstext = new PIXI.Text('0 bullets', bulletsstyle);
+const bulletstext = new PIXI.Text('🔫 0', bulletsstyle);
 bulletstext.x = 5;
+bulletstext.y = 5;
 app.stage.addChild(bulletstext);
 
 //Variable life
@@ -61,15 +65,15 @@ const lifestyle = new PIXI.TextStyle({
     stroke: '#ffffff',
     strokeThickness: 4,
     dropShadow: true,
-    dropShadowDistance: 10,
+    dropShadowDistance: 5,
     dropShadowAngle: Math.PI / 2,
     dropShadowBlur: 4,
     dropShadowColor: '#000000'
 });
 
 //Text life
-const lifetext = new PIXI.Text('3', lifestyle);
-lifetext.x = 765;
+const lifetext = new PIXI.Text('❤️ 3', lifestyle);
+lifetext.x = 715;
 lifetext.y = 535;
 app.stage.addChild(lifetext);
 
@@ -85,7 +89,7 @@ const scorestyle = new PIXI.TextStyle({
     stroke: '#ffffff',
     strokeThickness: 4,
     dropShadow: true,
-    dropShadowDistance: 10,
+    dropShadowDistance: 5,
     dropShadowAngle: Math.PI / 2,
     dropShadowBlur: 4,
     dropShadowColor: '#000000'
@@ -95,11 +99,11 @@ const scorestyle = new PIXI.TextStyle({
 const efficiencyStyle = new PIXI.TextStyle({
     fontFamily: 'Arial',
     fontSize: 36,
-    fill: 'orange',
+    fill: 'darkorange',
     stroke: '#ffffff',
     strokeThickness: 4,
     dropShadow: true,
-    dropShadowDistance: 10,
+    dropShadowDistance: 5,
     dropShadowAngle: Math.PI / 2,
     dropShadowBlur: 4,
     dropShadowColor: '#000000'
@@ -107,12 +111,12 @@ const efficiencyStyle = new PIXI.TextStyle({
 
 //Text object for efficiency
 const efficiencyText = new PIXI.Text('', efficiencyStyle);
-efficiencyText.x = 290;
+efficiencyText.x = 255;
 efficiencyText.y = 480;
 app.stage.addChild(efficiencyText);
 
 //Text score
-const scoretext = new PIXI.Text('0 score', scorestyle);
+const scoretext = new PIXI.Text('🎯 0', scorestyle);
 scoretext.x = 5;
 scoretext.y = 535;
 app.stage.addChild(scoretext);
@@ -137,12 +141,108 @@ ground.scale.x = 10;
 ground.scale.y = 2;
 app.stage.addChild(ground);
 
+const titleScreen = PIXI.Sprite.from('assets/title.png');
+titleScreen.x = 0;
+titleScreen.y = 0;
+titleScreen.width = 800; //Setzen Sie die Breite des Titelbildschirms fest auf X Pixel
+titleScreen.height = 600; //Setzen Sie die Höhe des Titelbildschirms fest auf X Pixel
+app.stage.addChild(titleScreen);
+
+const easyButton = PIXI.Sprite.from('assets/easyButton.png');
+easyButton.x = 450;
+easyButton.y = 345;
+easyButton.scale.set(0.15); //Skalieren Sie die Schaltfläche
+easyButton.interactive = true;
+easyButton.buttonMode = true;
+easyButton.on('pointerdown', () => startGame('easy'));
+
+const normalButton = PIXI.Sprite.from('assets/normalButton.png');
+normalButton.x = 450;
+normalButton.y = 400;
+normalButton.scale.set(0.15); //Skalieren Sie die Schaltfläche
+normalButton.interactive = true;
+normalButton.buttonMode = true;
+normalButton.on('pointerdown', () => startGame('normal'));
+
+const hardButton = PIXI.Sprite.from('assets/hardButton.png');
+hardButton.x = 450;
+hardButton.y = 455;
+hardButton.scale.set(0.15); //Skalieren Sie die Schaltfläche
+hardButton.interactive = true;
+hardButton.buttonMode = true;
+hardButton.on('pointerdown', () => startGame('hard'));
+
+app.stage.addChild(easyButton);
+app.stage.addChild(normalButton);
+app.stage.addChild(hardButton);
+
+function startGame(difficulty) {
+    titleScreen.visible = false;
+    easyButton.visible = false;
+    normalButton.visible = false;
+    hardButton.visible = false;
+
+    let gameSpeed;
+    switch (difficulty) {
+        case 'easy':
+            gameSpeed = 2000;
+            break;
+        case 'normal':
+            gameSpeed = 1350;
+            break;
+        case 'hard':
+            gameSpeed = 900;
+            break;
+    }
+
+    gameInterval(() => {
+        const files = PIXI.Sprite.from('assets/files.png');
+        files.x = random(0, 700);
+        files.y = -25;
+        files.scale.x = 0.03;
+        files.scale.y = 0.03;
+        app.stage.addChild(files);
+        filesList.push(files);
+        flyDown(files, 2.9);
+        
+        waitForCollision(worker, files).then(function() {
+            app.stage.removeChild(files);
+            life -= 1;
+            lifetext.text = `❤️ ${life}`;
+            sound2.play();
+            if (life <= 0) {
+                app.stage.addChild(gameover);
+                stopGame();
+                sound1.play();
+                let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
+                efficiencyText.text = `🏁 Efficiency: ${efficiency}`;
+                app.stage.addChild(efficiencyText);
+            }
+        });
+
+        waitForCollision(ground, files).then(function() {
+            app.stage.removeChild(files);
+            life -= 1;
+            lifetext.text = `❤️ ${life}`;
+            sound5.play();
+            if (life <= 0) {
+                app.stage.addChild(gameover);
+                stopGame();
+                sound1.play();
+                let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
+                efficiencyText.text = `🏁 Efficiency: ${efficiency}`;
+                app.stage.addChild(efficiencyText);
+            }
+        });
+    }, gameSpeed);
+}
+
 function leftKeyPressed() {
-    worker.x = worker.x - 5.5;
+    worker.x = worker.x - 5.75;
 }
 
 function rightKeyPressed() {
-    worker.x = worker.x + 5.5;
+    worker.x = worker.x + 5.75;
 }
 
 function spaceKeyPressed() {
@@ -153,59 +253,13 @@ function spaceKeyPressed() {
     bullet.scale.y = 0.02;
     flyUp(bullet);
     bullets += 1;
-    bulletstext.text = bullets;
+    bulletstext.text = `🔫 ${bullets}`; //Aktualisieren Sie den Text korrekt
     app.stage.addChild(bullet);
     sound3.play();
     waitForCollision(bullet, filesList).then(function([bullet, files]) {
         app.stage.removeChild(bullet, files);
         score += 1;
-        scoretext.text = score;
+        scoretext.text = `🎯 ${score}`; //Aktualisieren Sie den Text korrekt
         sound4.play();
     });
 }
-
-gameInterval(function() {
-    const files = PIXI.Sprite.from('assets/files.png');
-    files.x = random(0, 700);
-    files.y = -25;
-    files.scale.x = 0.03;
-    files.scale.y = 0.03;
-    app.stage.addChild(files);
-    filesList.push(files);
-    flyDown(files, 2.9);
-    
-    waitForCollision(worker, files).then(function() {
-        app.stage.removeChild(files);
-        life -= 1;
-        lifetext.text = life;
-        sound2.play();
-        if (life <= 0) {
-            app.stage.addChild(gameover);
-            stopGame();
-            //Play the sound
-            sound1.play();
-            //Calculate efficiency
-            let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
-            efficiencyText.text = `Efficiency: ${efficiency}`;
-            app.stage.addChild(efficiencyText);
-        }
-    });
-
-    waitForCollision(ground, files).then(function() {
-        app.stage.removeChild(files);
-        life -= 1;
-        lifetext.text = life;
-        sound5.play();
-        if (life <= 0) {
-            app.stage.addChild(gameover);
-            stopGame();
-            //Play the sound
-            sound1.play();
-            //Calculate efficiency
-            let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
-            efficiencyText.text = `Efficiency: ${efficiency}`;
-            app.stage.addChild(efficiencyText);
-        }
-    });
-    
-}, 1350);
