@@ -31,6 +31,10 @@ var sound5 = new Howl({
     src: ['assets/soundPaperFloor.mp3']
 });
 
+var sound6 = new Howl({
+    src: ['assets/drums.mp3']
+});
+
 //Variable bullets
 var bullets = 0;
 
@@ -127,6 +131,10 @@ gameover.y = 80;
 gameover.scale.x = 0.75;
 gameover.scale.y = 0.75;
 
+gameover.interactive = true;
+gameover.buttonMode = true;
+gameover.on('pointerdown', restartGame);
+
 const worker = PIXI.Sprite.from('assets/worker.png');
 worker.x = 368;
 worker.y = 490;
@@ -144,14 +152,18 @@ app.stage.addChild(ground);
 const titleScreen = PIXI.Sprite.from('assets/title.png');
 titleScreen.x = 0;
 titleScreen.y = 0;
-titleScreen.width = 800; //Setzen Sie die Breite des Titelbildschirms fest auf X Pixel
-titleScreen.height = 600; //Setzen Sie die Höhe des Titelbildschirms fest auf X Pixel
+titleScreen.width = 800; //title-screen-width in pixels
+titleScreen.height = 600; //title-screen-height in pixels
 app.stage.addChild(titleScreen);
+
+//Play sound6 while title screen is active
+sound6.loop(true);
+sound6.play();
 
 const easyButton = PIXI.Sprite.from('assets/easyButton.png');
 easyButton.x = 450;
 easyButton.y = 345;
-easyButton.scale.set(0.15); //Skalieren Sie die Schaltfläche
+easyButton.scale.set(0.15); //Scale the button
 easyButton.interactive = true;
 easyButton.buttonMode = true;
 easyButton.on('pointerdown', () => startGame('easy'));
@@ -159,7 +171,7 @@ easyButton.on('pointerdown', () => startGame('easy'));
 const normalButton = PIXI.Sprite.from('assets/normalButton.png');
 normalButton.x = 450;
 normalButton.y = 400;
-normalButton.scale.set(0.15); //Skalieren Sie die Schaltfläche
+normalButton.scale.set(0.15); //Scale the button
 normalButton.interactive = true;
 normalButton.buttonMode = true;
 normalButton.on('pointerdown', () => startGame('normal'));
@@ -167,7 +179,7 @@ normalButton.on('pointerdown', () => startGame('normal'));
 const hardButton = PIXI.Sprite.from('assets/hardButton.png');
 hardButton.x = 450;
 hardButton.y = 455;
-hardButton.scale.set(0.15); //Skalieren Sie die Schaltfläche
+hardButton.scale.set(0.15); //Scale the button
 hardButton.interactive = true;
 hardButton.buttonMode = true;
 hardButton.on('pointerdown', () => startGame('hard'));
@@ -181,6 +193,9 @@ function startGame(difficulty) {
     easyButton.visible = false;
     normalButton.visible = false;
     hardButton.visible = false;
+
+    //Stop sound6 when game starts
+    sound6.stop();
 
     let gameSpeed;
     switch (difficulty) {
@@ -217,6 +232,9 @@ function startGame(difficulty) {
                 let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
                 efficiencyText.text = `🏁 Efficiency: ${efficiency}`;
                 app.stage.addChild(efficiencyText);
+                background.interactive = true;
+                background.buttonMode = true;
+                background.on('pointerdown', restartGame);
             }
         });
 
@@ -232,9 +250,16 @@ function startGame(difficulty) {
                 let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
                 efficiencyText.text = `🏁 Efficiency: ${efficiency}`;
                 app.stage.addChild(efficiencyText);
+                background.interactive = true;
+                background.buttonMode = true;
+                background.on('pointerdown', restartGame);
             }
         });
     }, gameSpeed);
+}
+
+function restartGame() {
+    location.reload();
 }
 
 function leftKeyPressed() {
@@ -253,13 +278,13 @@ function spaceKeyPressed() {
     bullet.scale.y = 0.02;
     flyUp(bullet);
     bullets += 1;
-    bulletstext.text = `🔫 ${bullets}`; //Aktualisieren Sie den Text korrekt
+    bulletstext.text = `🔫 ${bullets}`; //Update text correctly
     app.stage.addChild(bullet);
     sound3.play();
     waitForCollision(bullet, filesList).then(function([bullet, files]) {
         app.stage.removeChild(bullet, files);
         score += 1;
-        scoretext.text = `🎯 ${score}`; //Aktualisieren Sie den Text korrekt
+        scoretext.text = `🎯 ${score}`; //Update text correctly
         sound4.play();
     });
 }
