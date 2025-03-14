@@ -161,7 +161,7 @@ titleScreen.height = 600; //title-screen-height in pixels
 app.stage.addChild(titleScreen);
 
 //Play sound6 while title screen is active
-sound6.loop(true);
+sound6.loop = true; //Corrected looping method
 sound6.play();
 
 const easyButton = PIXI.Sprite.from('assets/easyButton.png');
@@ -200,7 +200,7 @@ function startGame(difficulty) {
 
     //Stop sound6 when game starts and play sound7
     sound6.stop();
-    sound7.loop(true);
+    sound7.loop = true; //Corrected looping method
     sound7.play();
 
     let gameSpeed;
