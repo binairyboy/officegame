@@ -35,6 +35,10 @@ var sound6 = new Howl({
     src: ['assets/drums.mp3']
 });
 
+var sound7 = new Howl({
+    src: ['assets/funnyBGM.mp3']
+});
+
 //Variable bullets
 var bullets = 0;
 
@@ -194,8 +198,10 @@ function startGame(difficulty) {
     normalButton.visible = false;
     hardButton.visible = false;
 
-    //Stop sound6 when game starts
+    //Stop sound6 when game starts and play sound7
     sound6.stop();
+    sound7.loop(true);
+    sound7.play();
 
     let gameSpeed;
     switch (difficulty) {
@@ -227,6 +233,7 @@ function startGame(difficulty) {
             sound2.play();
             if (life <= 0) {
                 app.stage.addChild(gameover);
+                sound7.stop();
                 stopGame();
                 sound1.play();
                 let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
@@ -245,6 +252,7 @@ function startGame(difficulty) {
             sound5.play();
             if (life <= 0) {
                 app.stage.addChild(gameover);
+                sound7.stop();
                 stopGame();
                 sound1.play();
                 let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
