@@ -7,6 +7,37 @@ const filesList = [];
 
 document.body.appendChild(app.view);
 
+//Remove white border around the canvas and make it fill the screen
+document.body.style.margin = '0';
+document.body.style.overflow = 'hidden';
+document.documentElement.style.margin = '0';
+document.documentElement.style.overflow = 'hidden';
+
+app.view.style.position = 'absolute';
+app.view.style.width = '100vw';
+app.view.style.height = '100vh';
+
+//Restrict browser window size to canvas size
+function restrictWindowSize() {
+    const canvasWidth = app.view.width;
+    const canvasHeight = app.view.height;
+    window.resizeTo(canvasWidth, canvasHeight);
+}
+
+//Call the function to restrict window size
+restrictWindowSize();
+
+//Adjust the initial browser window size to match the canvas
+function adjustInitialWindowSize() {
+    const canvasWidth = 800; //Base width of the canvas
+    const canvasHeight = 600; //Base height of the canvas
+    window.resizeTo(canvasWidth, canvasHeight);
+    window.moveTo(0, 0); //Optional: Move the window to the top-left corner
+}
+
+//Call the function to adjust the initial window size
+adjustInitialWindowSize();
+
 const background = PIXI.Sprite.from('assets/office.png');
 app.stage.addChild(background);
 
@@ -35,8 +66,19 @@ var sound6 = new Howl({
     src: ['assets/drums.mp3']
 });
 
+//Ensure sound6 loops when it ends
+sound6.on('end', () => {
+    sound6.play();
+});
+
+
 var sound7 = new Howl({
     src: ['assets/funnyBGM.mp3']
+});
+
+//Ensure sound7 loops when it ends
+sound7.on('end', () => {
+    sound7.play();
 });
 
 //Variable bullets
@@ -192,16 +234,70 @@ app.stage.addChild(easyButton);
 app.stage.addChild(normalButton);
 app.stage.addChild(hardButton);
 
+//Variable for game time
+let gameTime = 0.00;
+
+//Style for game time
+const timeStyle = new PIXI.TextStyle({
+    fontFamily: 'Arial',
+    fontSize: 38,
+    fill: 'black',
+    stroke: '#ffffff',
+    strokeThickness: 4,
+    dropShadow: true,
+    dropShadowDistance: 5,
+    dropShadowAngle: Math.PI / 2,
+    dropShadowBlur: 4,
+    dropShadowColor: '#000000'
+});
+
+//Text object for game time
+const timeText = new PIXI.Text('⏱️ 0.00', timeStyle);
+timeText.x = 690; //Adjusted to move further left
+timeText.y = 5;
+app.stage.addChild(timeText);
+
+//Initially hide the timeText
+timeText.visible = false;
+
+//Function to update game time
+let timeInterval;
+function startGameTime() {
+    gameTime = 0;
+    updateTimeText();
+    timeInterval = setInterval(() => {
+        gameTime += 10; //Increment by 10 milliseconds
+        updateTimeText();
+    }, 10);
+}
+
+function updateTimeText() {
+    const minutes = Math.floor(gameTime / 60000);
+    const seconds = Math.floor((gameTime % 60000) / 1000);
+    const milliseconds = Math.floor((gameTime % 1000) / 10);
+    timeText.text = `⏱️ ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
+}
+
+function stopGameTime() {
+    clearInterval(timeInterval);
+}
+
 function startGame(difficulty) {
     titleScreen.visible = false;
     easyButton.visible = false;
     normalButton.visible = false;
     hardButton.visible = false;
 
+    //Show the timeText when the game starts
+    timeText.visible = true;
+
     //Stop sound6 when game starts and play sound7
     sound6.stop();
     sound7.loop = true; //Corrected looping method
     sound7.play();
+
+    //Start game time
+    startGameTime();
 
     let gameSpeed;
     switch (difficulty) {
@@ -235,6 +331,7 @@ function startGame(difficulty) {
                 app.stage.addChild(gameover);
                 sound7.stop();
                 stopGame();
+                stopGameTime(); //Stop game time on game over
                 sound1.play();
                 let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
                 efficiencyText.text = `🏁 Efficiency: ${efficiency}`;
@@ -254,6 +351,7 @@ function startGame(difficulty) {
                 app.stage.addChild(gameover);
                 sound7.stop();
                 stopGame();
+                stopGameTime(); //Stop game time on game over
                 sound1.play();
                 let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
                 efficiencyText.text = `🏁 Efficiency: ${efficiency}`;
@@ -296,3 +394,40 @@ function spaceKeyPressed() {
         sound4.play();
     });
 }
+
+//Scale the game and its components proportionally to the browser window size
+function resizeGame() {
+    const scaleX = window.innerWidth / 800; //Base width of the game
+    const scaleY = window.innerHeight / 600; //Base height of the game
+    const scale = Math.min(scaleX, scaleY);
+
+    app.stage.scale.set(scale);
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+
+    //Remove offsets to ensure the canvas fills the screen
+    app.view.style.position = 'absolute';
+    app.view.style.left = '0';
+    app.view.style.top = '0';
+    app.view.style.transform = 'translate(0, 0)';
+
+    //Adjust background to match the base size
+    background.width = 800;
+    background.height = 600;
+
+    //Adjust title screen to match the base size
+    titleScreen.width = 800;
+    titleScreen.height = 600;
+
+    //Adjust ground to match the base width
+    ground.width = 800;
+
+    //Fix timeText position relative to the canvas
+    timeText.x = 590; //Fixed position within the canvas
+    timeText.y = 5;   //Fixed position within the canvas
+}
+
+//Add event listener for window resize
+window.addEventListener('resize', resizeGame);
+
+//Call resizeGame initially to ensure proper scaling
+resizeGame();
