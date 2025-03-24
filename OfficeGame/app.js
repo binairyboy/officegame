@@ -5,6 +5,10 @@ const app = new PIXI.Application({
 
 const filesList = [];
 
+//Bonus and Malus lists
+const BonusList1 = [];
+const MalusList1 = [];
+
 document.body.appendChild(app.view);
 
 //Remove white border around the canvas and make it fill the screen
@@ -71,7 +75,6 @@ sound6.on('end', () => {
     sound6.play();
 });
 
-
 var sound7 = new Howl({
     src: ['assets/funnyBGM.mp3']
 });
@@ -79,6 +82,14 @@ var sound7 = new Howl({
 //Ensure sound7 loops when it ends
 sound7.on('end', () => {
     sound7.play();
+});
+
+var sound8 = new Howl({
+    src: ['assets/lifeUp.mp3']
+});
+
+var sound9 = new Howl({
+    src: ['assets/lifeDown.mp3']
 });
 
 //Variable bullets
@@ -282,6 +293,52 @@ function stopGameTime() {
     clearInterval(timeInterval);
 }
 
+function isOverlapping(sprite1, sprite2) {
+    const rect1 = sprite1.getBounds();
+    const rect2 = sprite2.getBounds();
+    return (
+        rect1.x < rect2.x + rect2.width &&
+        rect1.x + rect1.width > rect2.x &&
+        rect1.y < rect2.y + rect2.height &&
+        rect1.y + rect1.height > rect2.y
+    );
+}
+
+//Utility function to check overlap with all existing sprites
+function isOverlappingWithAny(sprite, spriteLists) {
+    const rect1 = sprite.getBounds();
+    return spriteLists.some(list =>
+        list.some(existingSprite => {
+            const rect2 = existingSprite.getBounds();
+            return (
+                rect1.x < rect2.x + rect2.width &&
+                rect1.x + rect1.width > rect2.x &&
+                rect1.y < rect2.y + rect2.height &&
+                rect1.y + rect1.height > rect2.y
+            );
+        })
+    );
+}
+
+//Utility function to generate random positions with dynamic ranges
+function generateRandomPosition(sprite, spriteLists, maxAttempts = 100) {
+    let x, y;
+    let attempts = 0;
+    const spriteWidth = sprite.width;
+    const spriteHeight = sprite.height;
+
+    do {
+        x = random(0, 800 - spriteWidth); //Ensure the sprite fits within the canvas width
+        y = random(-50, 0); //Generate positions above the visible canvas
+        attempts++;
+    } while (
+        attempts < maxAttempts &&
+        isOverlappingWithAny({ getBounds: () => ({ x, y, width: spriteWidth, height: spriteHeight }) }, spriteLists)
+    );
+
+    return attempts < maxAttempts ? { x, y } : null; //Return null if no valid position is found
+}
+
 function startGame(difficulty) {
     titleScreen.visible = false;
     easyButton.visible = false;
@@ -313,20 +370,80 @@ function startGame(difficulty) {
     }
 
     gameInterval(() => {
+        //Add files to the game
         const files = PIXI.Sprite.from('assets/files.png');
-        files.x = random(0, 700);
-        files.y = -25;
-        files.scale.x = 0.03;
-        files.scale.y = 0.03;
-        app.stage.addChild(files);
-        filesList.push(files);
-        flyDown(files, 2.9);
-        
+        files.scale.set(0.03);
+        const filesPosition = generateRandomPosition(files, [filesList, BonusList1, MalusList1]);
+        if (filesPosition) {
+            files.x = filesPosition.x;
+            files.y = filesPosition.y;
+            app.stage.addChild(files);
+            filesList.push(files);
+            flyDown(files, 2.9);
+        }
+
+        //Add Bonus1 with a 10% chance to the game
+        if (Math.random() < 0.10) {
+            const Bonus1 = PIXI.Sprite.from('assets/PowerUp+1.png');
+            Bonus1.scale.set(0.035);
+            const bonusPosition = generateRandomPosition(Bonus1, [filesList, BonusList1, MalusList1]);
+            if (bonusPosition) {
+                Bonus1.x = bonusPosition.x;
+                Bonus1.y = bonusPosition.y;
+                app.stage.addChild(Bonus1);
+                BonusList1.push(Bonus1);
+                flyDown(Bonus1, 3.7);
+            }
+        }
+
+        //Add Malus1 with a 20% chance to the game
+        if (Math.random() < 0.20) {
+            const Malus1 = PIXI.Sprite.from('assets/PowerUp-1.png');
+            Malus1.scale.set(0.035);
+            const malusPosition = generateRandomPosition(Malus1, [filesList, BonusList1, MalusList1]);
+            if (malusPosition) {
+                Malus1.x = malusPosition.x;
+                Malus1.y = malusPosition.y;
+                app.stage.addChild(Malus1);
+                MalusList1.push(Malus1);
+                flyDown(Malus1, 3.7);
+            }
+        }
+
         waitForCollision(worker, files).then(function() {
             app.stage.removeChild(files);
             life -= 1;
             lifetext.text = `❤️ ${life}`;
             sound2.play();
+            if (life <= 0) {
+                app.stage.addChild(gameover);
+                sound7.stop();
+                stopGame();
+                stopGameTime(); //Stop game time on game over
+                sound1.play();
+                let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
+                efficiencyText.text = `🏁 Efficiency: ${efficiency}`;
+                app.stage.addChild(efficiencyText);
+                background.interactive = true;
+                background.buttonMode = true;
+                background.on('pointerdown', restartGame);
+            }
+        });
+
+        waitForCollision(worker, BonusList1).then(function([worker, bonus]) {
+            app.stage.removeChild(bonus); //Entferne nur das kollidierte Bonus-Objekt
+            BonusList1.splice(BonusList1.indexOf(bonus), 1); //Entferne es aus der Liste
+            life += 1;
+            lifetext.text = `❤️ ${life}`;
+            sound8.play();
+        });
+
+        waitForCollision(worker, MalusList1).then(function([worker, malus]) {
+            app.stage.removeChild(malus); //Entferne nur das kollidierte Malus-Objekt
+            MalusList1.splice(MalusList1.indexOf(malus), 1); //Entferne es aus der Liste
+            life -= 1;
+            lifetext.text = `❤️ ${life}`;
+            sound9.play();
             if (life <= 0) {
                 app.stage.addChild(gameover);
                 sound7.stop();
@@ -387,11 +504,39 @@ function spaceKeyPressed() {
     bulletstext.text = `🔫 ${bullets}`; //Update text correctly
     app.stage.addChild(bullet);
     sound3.play();
+
     waitForCollision(bullet, filesList).then(function([bullet, files]) {
         app.stage.removeChild(bullet, files);
         score += 1;
         scoretext.text = `🎯 ${score}`; //Update text correctly
         sound4.play();
+    });
+
+    waitForCollision(bullet, BonusList1).then(function([bullet, bonus]) {
+        app.stage.removeChild(bullet, bonus);
+        life += 1;
+        lifetext.text = `❤️ ${life}`;
+        sound8.play();
+    });
+
+    waitForCollision(bullet, MalusList1).then(function([bullet, malus]) {
+        app.stage.removeChild(bullet, malus);
+        life -= 1;
+        lifetext.text = `❤️ ${life}`;
+        sound9.play();
+        if (life <= 0) {
+            app.stage.addChild(gameover);
+            sound7.stop();
+            stopGame();
+            stopGameTime(); //Stop game time on game over
+            sound1.play();
+            let efficiency = bullets > 0 ? (score / bullets).toFixed(2) : 0;
+            efficiencyText.text = `🏁 Efficiency: ${efficiency}`;
+            app.stage.addChild(efficiencyText);
+            background.interactive = true;
+            background.buttonMode = true;
+            background.on('pointerdown', restartGame);
+        }
     });
 }
 
