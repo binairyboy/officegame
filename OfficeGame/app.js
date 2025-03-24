@@ -431,16 +431,16 @@ function startGame(difficulty) {
         });
 
         waitForCollision(worker, BonusList1).then(function([worker, bonus]) {
-            app.stage.removeChild(bonus); //Entferne nur das kollidierte Bonus-Objekt
-            BonusList1.splice(BonusList1.indexOf(bonus), 1); //Entferne es aus der Liste
+            app.stage.removeChild(bonus); //Remove only the collided bonus object
+            BonusList1.splice(BonusList1.indexOf(bonus), 1); //Remove it from the list
             life += 1;
             lifetext.text = `❤️ ${life}`;
             sound8.play();
         });
 
         waitForCollision(worker, MalusList1).then(function([worker, malus]) {
-            app.stage.removeChild(malus); //Entferne nur das kollidierte Malus-Objekt
-            MalusList1.splice(MalusList1.indexOf(malus), 1); //Entferne es aus der Liste
+            app.stage.removeChild(malus); //Remove only the collided penalty object
+            MalusList1.splice(MalusList1.indexOf(malus), 1); //Remove it from the list
             life -= 1;
             lifetext.text = `❤️ ${life}`;
             sound9.play();
