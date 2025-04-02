@@ -327,9 +327,16 @@ function generateRandomPosition(sprite, spriteLists, maxAttempts = 100) {
     const spriteWidth = sprite.width;
     const spriteHeight = sprite.height;
 
+    //Limit the x-position to the width of the background
+    const maxX = background.width - spriteWidth;
+
+    //Limit the y-position to the top of the background
+    const minY = -50; //Above the visible area
+    const maxY = 0;   //At the top of the background
+
     do {
-        x = random(0, 800 - spriteWidth); //Ensure the sprite fits within the canvas width
-        y = random(-50, 0); //Generate positions above the visible canvas
+        x = random(0, maxX); //Random x-position within the width of the background
+        y = random(minY, maxY); //Random y-position in the upper area
         attempts++;
     } while (
         attempts < maxAttempts &&
@@ -478,19 +485,32 @@ function startGame(difficulty) {
                 background.on('pointerdown', restartGame);
             }
         });
+
+        waitForCollision(ground, BonusList1).then(function([ground, bonus]) {
+            app.stage.removeChild(bonus);
+        });
+
+        waitForCollision(ground, MalusList1).then(function([ground, malus]) {
+            app.stage.removeChild(malus);
+        });
+
     }, gameSpeed);
-}
+} 
 
 function restartGame() {
     location.reload();
 }
 
 function leftKeyPressed() {
-    worker.x = worker.x - 5.75;
+    if (worker.x > 0) { //Limit movement to the left
+        worker.x = worker.x - 5.75;
+    }
 }
 
 function rightKeyPressed() {
-    worker.x = worker.x + 5.75;
+    if (worker.x + worker.width < background.width) { //Limit movement to the right
+        worker.x = worker.x + 5.75;
+    }
 }
 
 function spaceKeyPressed() {
